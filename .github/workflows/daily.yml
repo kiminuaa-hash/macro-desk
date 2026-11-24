@@ -25,6 +25,7 @@ jobs:
       - name: 抓数据 + 算模型 + 生成工作台
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        working-directory: macro_regime_desk
         run: python run.py
       - name: 把结果提交回仓库
         run: |
@@ -40,8 +41,8 @@ jobs:
       - name: 准备 GitHub Pages 站点
         run: |
           mkdir -p site
-          cp output/dashboard.html site/index.html
-          cp -r output/*.md site/ 2>/dev/null || true
+          cp macro_regime_desk/output/dashboard.html site/index.html
+          cp -r macro_regime_desk/output/*.md site/ 2>/dev/null || true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
