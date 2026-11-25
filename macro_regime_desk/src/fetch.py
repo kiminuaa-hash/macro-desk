@@ -379,7 +379,7 @@ def fetch_fred():
     for name, (sid, _desc) in C.FRED_SERIES.items():
         url = ("https://api.stlouisfed.org/fred/series/observations"
                f"?series_id={sid}&api_key={C.FRED_API_KEY}&file_type=json"
-               f"&observation_start=2022-01-01&sort_order=asc")
+               f"&observation_start=2015-01-01&sort_order=asc")
         js, err = get_json(url, cache_name=f"fred_{sid}.json", host_key="fred_api",
                            timeout=25, retry=2)
         if js is None:
@@ -401,6 +401,19 @@ def fetch_fred():
     if not out:
         return {}, {"name": "FRED 官方序列", "status": "failed",
                     "detail": "全部失败: " + "; ".join(bad)[:200], "last": None}
+
+    # CPI 转同比（%）
+    if "cpi" in out:
+        idx = out["cpi"]
+        yoy = []
+        for i in range(len(idx)):
+            if i < 12:
+                continue
+            base = idx[i - 12][1]
+            if base:
+                yoy.append((idx[i][0], round((idx[i][1] / base - 1) * 100, 3)))
+        if yoy:
+            out["cpi_yoy"] = yoy
 
     # 核心PCE 是价格指数，转成同比（%），便于直接判断通胀方向
     if "core_pce" in out:

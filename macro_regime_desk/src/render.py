@@ -145,6 +145,27 @@ h1{font-size:17px;font-weight:600;letter-spacing:.3px}
 footer{margin-top:26px;padding-top:16px;border-top:1px solid var(--line);
   color:var(--tx3);font-size:11px;line-height:1.7}
 .sec{margin-bottom:16px}
+/* ---------- 今日解读 ---------- */
+.read h3{font-size:13px;color:var(--acc);letter-spacing:.5px;margin:18px 0 10px;
+  padding-bottom:6px;border-bottom:1px solid #1e2733;font-weight:600}
+.read .hl{font-size:21px;font-weight:650;line-height:1.35;margin:3px 0 0;letter-spacing:-.2px}
+.read .lead{font-size:13px;color:var(--tx2);line-height:1.75;margin-top:10px}
+.thing{background:var(--card2);border:1px solid var(--line);border-radius:11px;
+  padding:13px 15px;margin-bottom:10px;position:relative}
+.thing .no{position:absolute;left:-1px;top:13px;width:3px;height:22px;border-radius:2px;background:var(--acc)}
+.thing h4{font-size:13.5px;font-weight:600;margin-bottom:7px;padding-left:11px;color:var(--tx)}
+.thing p{font-size:12.5px;color:var(--tx2);line-height:1.72;margin-bottom:6px}
+.thing p:last-child{margin-bottom:0}
+.achip{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:9px;
+  background:var(--card2);border:1px solid var(--line);font-size:12px}
+.achip .dot2{width:7px;height:7px;border-radius:50%;flex:0 0 7px}
+.act{background:var(--card2);border:1px solid var(--line);border-radius:11px;padding:12px 14px}
+.act .who{font-size:12px;font-weight:600;color:var(--acc);margin-bottom:7px}
+.act .do{font-size:12px;color:var(--tx);line-height:1.65;margin-bottom:6px}
+.act .why{font-size:11px;color:var(--tx3);line-height:1.6;border-top:1px dashed #1e2733;padding-top:6px}
+.falsify{background:rgba(240,185,11,.06);border:1px solid rgba(240,185,11,.25);
+  border-radius:11px;padding:13px 15px}
+.falsify li{font-size:12px;color:var(--tx2);line-height:1.7;margin-left:16px;margin-bottom:5px}
 @media(max-width:560px){
   .wrap{padding:0 11px}
   .card{padding:13px;border-radius:12px}
@@ -188,7 +209,7 @@ def spark(vals, w=200, h=30, color="#4e9bff", fill=True):
     """极简 SVG 折线（无依赖，离线可用）。"""
     vals = [v for v in vals if v is not None]
     if len(vals) < 3:
-        return '<svg width="100%" height="%d"></svg>' % h
+        return '<svg width="100%%" height="%d"></svg>' % h
     lo, hi = min(vals), max(vals)
     rng = (hi - lo) or 1.0
     n = len(vals)
@@ -334,7 +355,7 @@ def sec_hero(s):
 
 KPI_ORDER = ["real10y", "eps_rev", "credit", "dxy", "vix_ts",
              "core_pce_yoy", "unrate", "claims", "be10y",
-             "nom10y", "curve", "wti", "sofr", "vix"]
+             "fci", "nom10y", "curve", "wti", "sofr", "vix"]
 CORE = {"real10y", "eps_rev", "credit", "dxy", "vix_ts"}
 # 只有日频指标迟到才算异常；月频/周频本身就有发布节奏
 DAILY = {"real10y", "credit", "dxy", "vix", "vix_ts", "nom10y", "curve",
@@ -348,7 +369,7 @@ def sec_kpi(s):
               "dxy": "dxy", "vix_ts": "vix", "be10y": "be10y", "nom10y": "nom10y",
               "curve": "curve_series", "sofr": "sofr", "vix": "vix",
               "core_pce_yoy": "core_pce_yoy", "unrate": "unrate",
-              "claims": "claims", "t10yie": "t10yie", "wti": "wti"}
+              "claims": "claims", "t10yie": "t10yie", "wti": "wti", "fci": "nfci"}
     cards = []
     for k in KPI_ORDER:
         d = i.get(k)
@@ -357,7 +378,7 @@ def sec_kpi(s):
         digit = {"real10y": 2, "eps_rev": 3, "dxy": 2, "vix_ts": 2,
                  "be10y": 2, "t10yie": 2, "nom10y": 2, "curve": 2, "sofr": 2,
                  "vix": 1, "core_pce_yoy": 1, "unrate": 1, "claims": 1,
-                 "wti": 1}.get(k, 2)
+                 "wti": 1, "fci": 3}.get(k, 2)
         if k == "credit":
             digit = 1 if d["unit"] == "idx" else 2
         suffix = {"%": "%", "pp": "pp", "x": "x", "$": "$", "万": "万",
@@ -393,6 +414,227 @@ def sec_kpi(s):
   <div class="card">
     <h2>核心指标 <span>深色＝模型每周必看的 5 个指标 · 迷你图为近 90 个交易日</span></h2>
     <div class="kpi-grid">{"".join(cards)}</div>
+  </div>
+</div>"""
+
+
+DIM_CN = {"gy": "通胀水平", "gl": "增长水平", "dc": "通胀3月变化", "dl": "增长3月变化",
+          "xv": "跨资产波动", "fci": "金融条件FCI", "dfci": "FCI 3月变化"}
+
+
+def vbar(v, lo=-3.0, hi=3.0):
+    """以 0 为中心的横向条，用于状态向量可视化。"""
+    span = hi - lo
+    zero = (0 - lo) / span * 100
+    pct = abs(v) / span * 100
+    left = zero if v >= 0 else zero - pct
+    col = "#ef4b5a" if v > 0.15 else ("#12b886" if v < -0.15 else "#4e9bff")
+    return (f'<div style="position:relative;height:6px;background:#1c2532;border-radius:3px">'
+            f'<div style="position:absolute;left:{zero:.1f}%;top:-3px;width:1px;height:12px;'
+            f'background:#3a4658"></div>'
+            f'<div style="position:absolute;left:{left:.1f}%;width:{pct:.1f}%;height:6px;'
+            f'border-radius:3px;background:{col}"></div></div>')
+
+
+def sec_narrative(s):
+    nv = s.get("narrative")
+    if not nv:
+        return ""
+    things = "".join(
+        f'<div class="thing"><div class="no"></div><h4>{n}. {esc(t["title"])}</h4>'
+        + "".join(f'<p>{esc(p)}</p>' for p in t["body"] if p)
+        + "</div>"
+        for n, t in enumerate(nv["things"], 1))
+
+    chips = "".join(
+        f'<div class="achip"><span class="dot2" style="background:{a["tone"]}"></span>'
+        f'<span style="flex:1"><b>{esc(a["name"])}</b>'
+        f'<span style="color:var(--tx3);font-size:10.5px"> {esc(a["ticker"])}</span></span>'
+        f'<span style="color:{a["tone"]};font-size:11px">{esc(a["word"])}</span>'
+        f'<span class="mono" style="color:var(--tx2);font-size:11px;width:26px;text-align:right">'
+        f'{a["fit"]:.0f}</span></div>'
+        for a in nv["assets"])
+
+    acts = "".join(
+        f'<div class="act"><div class="who">{esc(a["who"])}</div>'
+        f'<div class="do">{esc(a["do"])}</div>'
+        f'<div class="why">为什么：{esc(a["why"])}</div></div>'
+        for a in nv["actions"])
+
+    fals = "".join(f"<li>{esc(f)}</li>" for f in nv["falsify"])
+
+    watch = "".join(
+        f'<div style="font-size:12px;color:var(--tx2);padding:6px 0;'
+        f'border-bottom:1px dashed #1c242f">'
+        f'<span class="mono" style="color:var(--tx3)">{esc(w["date"][5:])}</span>　'
+        f'<b style="color:var(--tx)">{esc(w["event"])}</b>'
+        f'<span style="color:var(--tx3)">　预期 {esc(w["cons"] or "—")}｜前值 {esc(w["prev"] or "—")}</span>'
+        + (f'<div style="color:var(--tx3);font-size:11px;margin-top:3px">{esc(w["hint"])}</div>'
+           if w["hint"] else "")
+        + "</div>"
+        for w in nv["watch"])
+
+    return f"""
+<div class="sec">
+  <div class="card read" style="border-color:#2b3a52;background:linear-gradient(165deg,#141c28,#12171f)">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+      <div style="flex:1;min-width:240px">
+        <div style="font-size:10.5px;color:var(--tx3);letter-spacing:1.2px">今日解读 · 大白话版</div>
+        <div class="hl">{esc(nv["headline"])}</div>
+      </div>
+      <span class="tag" style="border-color:#3a4a63;color:#bfd4f5">{esc(nv["regime_name"])}</span>
+    </div>
+    <p class="lead">{esc(nv["standfirst"])}</p>
+
+    <h3>今天最该知道的三件事</h3>
+    {things}
+
+    <h3>各类资产现在舒服吗</h3>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:8px">
+      {chips}
+    </div>
+    <div class="note-inline">「顺风/微风/没风/逆风」是当前环境对这类资产的有利程度，不是涨跌预测。</div>
+
+    <h3>如果要动手，怎么动</h3>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:10px">
+      {acts}
+    </div>
+
+    {f'<h3>接下来一周盯什么</h3>{watch}' if watch else ''}
+
+    <h3>什么情况下这个判断是错的</h3>
+    <div class="falsify"><ul>{fals}</ul></div>
+  </div>
+</div>"""
+
+
+def sec_regime(s):
+    r = s.get("regime")
+    if not r:
+        return ""
+    vec = r.get("vector") or {}
+    dims = "".join(
+        f'<div style="display:grid;grid-template-columns:78px 1fr 42px;gap:9px;'
+        f'align-items:center;font-size:11.5px;color:var(--tx2);margin-bottom:8px">'
+        f'<span>{DIM_CN.get(k, k)}</span>{vbar(v)}'
+        f'<span class="mono" style="text-align:right;color:var(--tx)">{v:+.2f}</span></div>'
+        for k, v in vec.items())
+
+    top3 = "".join(
+        f'<div style="display:flex;justify-content:space-between;font-size:11.5px;'
+        f'padding:5px 0;border-bottom:1px dashed #1c242f">'
+        f'<span style="color:var(--tx2)">{esc(x["name"])}</span>'
+        f'<span class="mono">{x["prob"]*100:.0f}%</span></div>'
+        for x in r.get("top", []))
+
+    tr = s.get("transitions") or {}
+    trs = "".join(
+        f'<div style="display:flex;justify-content:space-between;font-size:11.5px;padding:4px 0">'
+        f'<span style="color:var(--tx2)">{esc(REGIME_CN.get(k, k))}</span>'
+        f'<span class="mono">{v*100:.0f}%</span></div>'
+        for k, v in list(tr.items())[:4])
+
+    agree = s.get("regime_agree") or ""
+
+    return f"""
+<div class="sec">
+  <div class="card">
+    <h2>宏观状态机 · 花旗 10-Regime <span>7 维状态向量 → 高斯核打分 + 硬规则 · 与四象限互为交叉验证</span></h2>
+    <div class="grid" style="grid-template-columns:1.15fr 1fr .85fr">
+      <div>
+        <div style="font-size:11px;color:var(--tx3);letter-spacing:.5px">CURRENT REGIME</div>
+        <div style="font-size:19px;font-weight:650;margin:5px 0 3px;color:{r.get('color','#4e9bff')}">
+          {esc(r.get("name",""))}</div>
+        <div style="font-size:11.5px;color:var(--tx3);margin-bottom:9px">
+          拟合度 {r.get("prob",0)*100:.0f}% · 置信 {esc(r.get("confidence","—"))}
+          {"· 由硬规则判定" if r.get("by_rule") else ""}</div>
+        <p style="font-size:12px;color:var(--tx2);line-height:1.6">{esc(r.get("desc",""))}</p>
+        <div style="margin-top:11px;padding-top:10px;border-top:1px dashed #1e2733">
+          <div style="font-size:10.5px;color:var(--tx3);margin-bottom:6px">状态转移倾向（历史频率）</div>
+          {trs or '<span style="font-size:11px;color:var(--tx3)">历史样本不足</span>'}
+        </div>
+      </div>
+      <div>
+        <div style="font-size:10.5px;color:var(--tx3);margin-bottom:9px">7 维状态向量（标准化）</div>
+        {dims}
+        <div class="note-inline" style="margin-top:6px">
+          正值＝高于历史均值。研报要点：只看水平不够，变化率才能分开「衰退早期」和「晚期」。
+        </div>
+      </div>
+      <div>
+        <div style="font-size:10.5px;color:var(--tx3);margin-bottom:9px">候选状态（拟合度）</div>
+        {top3}
+        <div style="margin-top:12px;padding-top:10px;border-top:1px dashed #1e2733">
+          <div style="font-size:10.5px;color:var(--tx3);margin-bottom:6px">该状态的资产倾向</div>
+          <div style="font-size:11.5px;color:var(--tx2);line-height:1.8">
+            {"　".join(f'{n}{"+" if v>0 else ""}{v:.1f}' for n, v in [
+              ("股票", r.get("tilt",{}).get("equity",0)),
+              ("债券", r.get("tilt",{}).get("bond",0)),
+              ("信用", r.get("tilt",{}).get("credit",0)),
+              ("黄金", r.get("tilt",{}).get("gold",0)),
+              ("能源", r.get("tilt",{}).get("energy",0)),
+              ("优质股", r.get("tilt",{}).get("quality",0)),
+              ("现金", r.get("tilt",{}).get("cash",0))])}
+          </div>
+        </div>
+      </div>
+    </div>
+    {f'<div class="note-inline" style="color:#f0b90b;margin-top:12px">⚠ 交叉验证：{esc(agree)}</div>' if agree else ''}
+  </div>
+</div>"""
+
+
+REGIME_CN = {
+    "normal": "常态", "recovery": "复苏", "goldilocks": "金发女孩",
+    "growth_shock": "增长冲击", "tightening_fci": "条件收紧",
+    "stagflation_loose": "滞胀·松", "early_stagflation_tight": "早期滞胀·紧",
+    "inflationary_boom": "通胀繁荣", "recession": "衰退", "fin_shock": "金融冲击",
+}
+
+
+def sec_diversification(s):
+    sb = s.get("stock_bond") or {}
+    lei = s.get("lei") or {}
+    now = sb.get("now")
+    pct = sb.get("pct")
+    nfci = s["indicators"].get("fci")
+    corr_col = "#12b886" if (now is not None and now < -0.1) else "#ef4b5a"
+    verdict = ("对冲有效" if (now or 0) < -0.25 else
+               ("对冲失效" if (now or 0) > 0.05 else "对冲力度偏弱"))
+    return f"""
+<div class="sec">
+  <div class="card">
+    <h2>分散化体检 <span>研报核心结论：股债对冲是「状态依赖」的，不能默认它一直有效</span></h2>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(230px,1fr))">
+      <div>
+        <div class="kname" style="font-size:12px;color:var(--tx2)">股债 63 日滚动相关性</div>
+        <div class="kval mono" style="font-size:23px;margin:6px 0 2px;color:{corr_col}">
+          {"—" if now is None else f"{now:+.3f}"}</div>
+        <div style="font-size:11px;color:var(--tx3)">
+          {verdict}{"" if pct is None else f" · 近一年 {pct:.0f}% 分位（越低＝对冲越强）"}</div>
+        <div class="spark">{spark(sb.get("series") or [], color=corr_col)}</div>
+        <div class="knote">{esc(sb.get("note", ""))}</div>
+      </div>
+      <div>
+        <div class="kname" style="font-size:12px;color:var(--tx2)">金融条件指数 NFCI</div>
+        <div class="kval mono" style="font-size:23px;margin:6px 0 2px">
+          {"—" if not nfci else f"{nfci['value']:+.3f}"}</div>
+        <div style="font-size:11px;color:var(--tx3)">
+          {"负值＝宽松，正值＝收紧"}{"" if not nfci else f" · 3 月 {nfci.get('chg1m',0):+.2f}"}</div>
+        <div class="spark">{spark(s.get("nfci_series") or [], color="#4e9bff")}</div>
+        <div class="knote">芝加哥联储官方金融条件指数（周频）。研报认定：<b>late-cycle 的信号主要在 FCI 收紧</b>，
+        而不在增长或通胀本身。</div>
+      </div>
+      <div>
+        <div class="kname" style="font-size:12px;color:var(--tx2)">自建领先指标 LEI（z 值）</div>
+        <div class="kval mono" style="font-size:23px;margin:6px 0 2px">
+          {"—" if lei.get("now") is None else f"{lei['now']:+.2f}"}</div>
+        <div style="font-size:11px;color:var(--tx3)">数据 {esc(lei.get("date") or "—")} · {len(lei.get("components") or [])} 个成分</div>
+        <div class="spark">{spark(lei.get("series") or [], color="#12b886" if (lei.get("now") or 0) > 0 else "#ef4b5a")}</div>
+        <div class="knote">OECD G7 领先指标已停更，按 Conference Board 成分思路自建：
+        初请、建筑许可、消费者预期、制造业工时、期限利差、信用利差、股价。</div>
+      </div>
+    </div>
   </div>
 </div>"""
 
@@ -589,6 +831,7 @@ def render(s):
     <span><span class="dot" style="background:{s['score']['color']}"></span>
       环境评分 {s['score']['total']:.0f} · {esc(s['score']['band'])}</span>
     <span>象限 <b>{esc(q['id'])}</b> {esc(q['label'])}</span>
+    {f'<span>状态 <b style="color:{s["regime"].get("color","#4e9bff")}">{esc(s["regime"].get("cn",""))}</b></span>' if s.get("regime") else ''}
     <span>数据日期 <b class="mono">{esc(s['as_of'] or '—')}</b></span>
     <span>生成于 <span class="mono">{esc(s['generated_at'])}</span></span>
   </div>
@@ -596,7 +839,10 @@ def render(s):
 
 <div class="wrap">
 {sec_hero(s)}
+{sec_narrative(s)}
 {sec_kpi(s)}
+{sec_regime(s)}
+{sec_diversification(s)}
 {sec_calendar(s)}
 {sec_signals(s)}
 {sec_assets(s)}
@@ -625,6 +871,32 @@ def daily_note(s):
     L.append(f"**象限 {q['id']}｜{q['label']}**（{q['keyword']}）　"
              f"**环境评分 {sc['total']:.0f}/100 · {sc['band']}**\n")
     L.append(f"> {q['desc']}\n")
+    r = s.get("regime")
+    if r:
+        L.append("## 宏观状态机（花旗 10-Regime）\n")
+        L.append(f"**{r['name']}**　拟合度 {r['prob']*100:.0f}% · 置信 {r['confidence']}"
+                 f"{'· 硬规则判定' if r.get('by_rule') else ''}\n")
+        L.append(f"> {r['desc']}\n")
+        vec = r.get("vector") or {}
+        L.append("| 维度 | 标准化值 |")
+        L.append("|---|---|")
+        for k in ["gy", "gl", "dc", "dl", "xv", "fci", "dfci"]:
+            if k in vec:
+                L.append(f"| {DIM_CN.get(k,k)} | {vec[k]:+.2f} |")
+        L.append("")
+        til = r.get("tilt") or {}
+        L.append("资产倾向：" + "　".join(
+            f"{n}{v:+.1f}" for n, v in [("股票", til.get("equity",0)), ("债券", til.get("bond",0)),
+                                        ("信用", til.get("credit",0)), ("黄金", til.get("gold",0)),
+                                        ("能源", til.get("energy",0)), ("优质股", til.get("quality",0)),
+                                        ("现金", til.get("cash",0))]) + "\n")
+        if s.get("regime_agree"):
+            L.append(f"**交叉验证**：{s['regime_agree']}\n")
+
+    sb = s.get("stock_bond") or {}
+    if sb.get("now") is not None:
+        L.append(f"**股债 63 日相关性 {sb['now']:+.3f}**"
+                 f"（负＝对冲有效，正＝股债同跌；研报称只有增长冲击与深度衰退时可靠）\n")
     L.append("## 五个核心指标\n")
     L.append("| 指标 | 最新 | 变化 | 方向 | 近一年分位 |")
     L.append("|---|---|---|---|---|")
@@ -647,8 +919,9 @@ def daily_note(s):
     L.append("| 资产 | 最新价 | 1月 | 3月 | 环境适配度 |")
     L.append("|---|---|---|---|---|")
     for a in sorted(s["assets"], key=lambda y: -(y["fit"] or 0)):
+        fit = "—" if a["fit"] is None else f"{a['fit']:.0f}"
         L.append(f"| {a['ticker']} {a['name']} | {fnum(a['px'])} | {fsigned(a['chg1m'],2,'%')} | "
-                 f"{fsigned(a['chg3m'],2,'%')} | {a['fit']:.0f} |")
+                 f"{fsigned(a['chg3m'],2,'%')} | {fit} |")
     L.append("")
     L.append(f"## 对应动作\n{q['playbook']}\n")
     L.append("---")

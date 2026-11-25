@@ -16,6 +16,7 @@ sys.path.insert(0, str(__import__("pathlib").Path(__file__).parent / "src"))
 import config as C  # noqa: E402
 import fetch  # noqa: E402
 import model  # noqa: E402
+import narrative  # noqa: E402
 import render  # noqa: E402
 
 
@@ -42,9 +43,12 @@ def rebuild():
     (C.SNAPSHOTS / f"{date.today().isoformat()}.json").write_text(
         json.dumps(slim_snap, ensure_ascii=False, indent=1), encoding="utf-8")
     _append_history(date.today().isoformat(), snap)
+    snap["narrative"] = narrative.build(snap)
     (C.OUTPUT / "dashboard.html").write_text(render.render(snap), encoding="utf-8")
     (C.OUTPUT / f"daily_{date.today().isoformat()}.md").write_text(
         render.daily_note(snap), encoding="utf-8")
+    (C.OUTPUT / f"report_{date.today().isoformat()}.md").write_text(
+        narrative.to_markdown(snap["narrative"], snap), encoding="utf-8")
     q = snap["quadrant"]
     print(f"[rebuild] {snap['as_of']} | {q['id']} {q['label']} | "
           f"评分 {snap['score']['total']} {snap['score']['band']}")
@@ -120,12 +124,15 @@ def run(use_net=True):
     snap["history"] = _load_history()
 
     # ---------- 渲染 ----------
+    snap["narrative"] = narrative.build(snap)
     html = render.render(snap)
     out = C.OUTPUT / "dashboard.html"
     out.write_text(html, encoding="utf-8")
 
     note = render.daily_note(snap)
     (C.OUTPUT / f"daily_{day}.md").write_text(note, encoding="utf-8")
+    report = narrative.to_markdown(snap["narrative"], snap)
+    (C.OUTPUT / f"report_{day}.md").write_text(report, encoding="utf-8")
 
     print("-" * 62)
     q = snap["quadrant"]
@@ -198,6 +205,7 @@ if __name__ == "__main__":
     if "--render-only" in sys.argv:
         snap = json.loads((C.OUTPUT / "latest.json").read_text(encoding="utf-8"))
         snap["history"] = _load_history()
+        snap["narrative"] = narrative.build(snap)
         (C.OUTPUT / "dashboard.html").write_text(render.render(snap), encoding="utf-8")
         (C.OUTPUT / f"daily_{date.today().isoformat()}.md").write_text(
             render.daily_note(snap), encoding="utf-8")

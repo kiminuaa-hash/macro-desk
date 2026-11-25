@@ -10,6 +10,7 @@
 import statistics
 
 import config as C
+import regime as RG
 from indicators import (align, back, chg, chg_d, clip, direction, direction_d,
                         last, latest_common, pct_chg, pct_chg_d, percentile,
                         score_from_z, zscore)
@@ -253,6 +254,17 @@ def build_indicators(series, sources):
                          _src(sources, "fred"),
                          f"商品链条的价格锚；EIA 现货，数据日 {last(wti)[0]}（通常滞后数个交易日）")
         ex["wti_series"] = wti
+
+    # --- 金融条件（芝加哥联储 NFCI，花旗框架的核心 late-cycle 信号）
+    nfci = series.get("nfci")
+    if nfci:
+        ind["fci"] = _mk(
+            "fci", "金融条件指数 NFCI", last(nfci)[1], "",
+            chg_d(nfci, 7), chg_d(nfci, 30), chg_d(nfci, 91),
+            direction_d(nfci, 0.1, 30), zscore(nfci), percentile(nfci),
+            _src(sources, "fred"),
+            "正值＝金融条件收紧。研报核心：late-cycle 的警报来自 FCI 收紧，而非增长本身")
+        ex["nfci_series"] = [round(v, 3) for _d, v in nfci[-90:]]
 
     # --- 融资成本
     sofr = series.get("sofr")
@@ -549,7 +561,7 @@ def build_signals(ind, ex):
 
 
 # ============================================================ 五、资产适配度
-def build_assets(series, ind, ex, score):
+def build_assets(series, ind, ex, score, regime=None):
     p = score["parts"]
     S = lambda k: p.get(k, {}).get("score", 50)  # noqa: E731
     real, earn, cred, dollar, vol = (S("real_rate"), S("earnings"),
@@ -559,6 +571,8 @@ def build_assets(series, ind, ex, score):
     curve_steep = 50 + (ex.get("curve_chg") or 0) * 100
     commod = clip(50 + (ex.get("commodity_chg") or 0) * 250)   # 1 个月动量，10% 幅度≈±25 分
 
+    infl_score = (100 if ind.get("core_pce_yoy", {}).get("dir") == "up"
+                  else (0 if ind.get("core_pce_yoy", {}).get("dir") == "down" else 50))
     fit_rules = {
         "SPY": 0.30 * earn + 0.25 * cred + 0.25 * real + 0.20 * vol,
         "QQQ": 0.42 * earn + 0.38 * real + 0.10 * cred + 0.10 * vol,
@@ -573,8 +587,19 @@ def build_assets(series, ind, ex, score):
         "SHY": 0.55 * (100 - real) + 0.45 * (100 - vol),
         "IEF": 0.50 * real + 0.50 * (100 - vol),
         "DBC": 0.60 * clip(commod) + 0.40 * dollar,   # 美元走弱利好商品
+        # 花旗框架：Quality 在信用收紧、波动抬升时相对抗跌
+        "QUAL": 0.45 * (100 - cred) + 0.30 * (100 - vol) + 0.25 * earn,
+        # TIPS：实际利率低 + 美元弱时占优，是"实物资产"里的抗通胀腿
+        "TIP": 0.35 * (100 - real) + 0.30 * infl_score + 0.35 * (100 - dollar),
         "UUP": 0.60 * (100 - dollar) + 0.40 * (100 - vol),
     }
+
+    # 花旗 10 状态给出的资产倾向（-1~+1），作为适配度的条件修正
+    tilt = (regime or {}).get("tilt") or {}
+    TILT_MAP = {"SPY": "equity", "QQQ": "equity", "XLF": "equity", "KBE": "equity",
+                "TLT": "bond", "IEF": "bond", "SHY": "cash", "UUP": "cash",
+                "HYG": "credit", "GLD": "gold", "XLE": "energy", "DBC": "energy",
+                "QUAL": "quality", "TIP": "gold"}
 
     rows = []
     for key, ticker, name, role in C.ASSETS:
@@ -588,7 +613,8 @@ def build_assets(series, ind, ex, score):
             "chg1d": pct_chg_d(s, 1), "chg1w": pct_chg_d(s, 7),
             "chg1m": pct_chg_d(s, 30), "chg3m": pct_chg_d(s, 91),
             "pct52": percentile(s, 252),
-            "fit": round(clip(fit_rules.get(key, 50)), 1) if key in fit_rules else None,
+            "fit": round(clip(fit_rules[key] + tilt.get(TILT_MAP.get(key, ""), 0) * 18), 1)
+                   if key in fit_rules else None,
             "spark": [round(x, 4) for _d, x in s[-63:]],
         })
     return rows
@@ -652,7 +678,30 @@ def build_snapshot(series, sources, meta):
     quadrant = build_quadrant(ind, ex)
     score = build_score(ind, ex)
     signals = build_signals(ind, ex)
-    assets = build_assets(series, ind, ex, score)
+
+    # ---------- 花旗 10-regime 框架 ----------
+    vec = RG.build_state_vector(series)
+    reg = RG.classify(vec) or {}
+    hist, _ = RG.regime_history(series)
+    transitions = RG.transition_matrix(hist)
+    corr_series, corr_now = RG.stock_bond_corr(series.get("px_SPY"), series.get("px_IEF"))
+    lei_series, lei_used = RG.build_lei(series)
+
+    # 状态与四象限的一致性判断（两者分歧本身就是信息）
+    agree = None
+    if reg:
+        defensive = reg["key"] in ("tightening_fci", "early_stagflation_tight",
+                                   "growth_shock", "fin_shock", "stagflation_loose")
+        if quadrant["id"] in ("Q2", "Q4") and defensive:
+            agree = ("象限偏正面（盈利在支撑），但状态机已进入防御型区间 —— "
+                     "典型的结构性行情：指数扛得住，但信用与高波动资产先出问题。")
+        elif quadrant["id"] in ("Q1", "Q3") and not defensive:
+            agree = ("象限偏负面，但状态机尚未进入防守区间 —— 下行更多是估值修复，"
+                     "不是基本面崩塌。")
+        else:
+            agree = "两个框架方向一致，可以按象限的动作指引执行。"
+
+    assets = build_assets(series, ind, ex, score, regime=reg)
 
     # 数据日期：取核心指标里最新的日期
     # 数据日期：以行情/利率类"日频"数据的最晚日期为准（盈利预期是快照，不参与）
@@ -692,6 +741,10 @@ def build_snapshot(series, sources, meta):
              "detail": f"净上修 {ind.get('eps_rev', {}).get('value', '-')}"},
             {"name": "风险偏好", "state": "改善" if (ex.get("vix_ratio") or 1) < 0.95 else "恶化",
              "detail": f"VIX {ind.get('vix', {}).get('value', '-')}"},
+            {"name": "金融条件",
+             "state": ("收紧" if ind.get("fci", {}).get("dir") == "up" else
+                       "宽松" if ind.get("fci", {}).get("dir") == "down" else "平稳"),
+             "detail": f"NFCI {ind.get('fci', {}).get('value', '-')}"},
             {"name": "信用利差", "state": "扩大" if ind.get("credit", {}).get("dir") == "up" else "收窄",
              "detail": f"{ind.get('credit', {}).get('value', '-')}"},
         ],
@@ -707,8 +760,26 @@ def build_snapshot(series, sources, meta):
         "signals": signals,
         "assets": assets,
         "chain": chain,
+        "regime": reg,
+        "regime_agree": agree,
+        "transitions": transitions.get(reg.get("key", ""), {}) if reg else {},
+        "regime_history": [{"date": d, "key": k} for d, k in hist[-60:]],
+        "stock_bond": {
+            "now": corr_now,
+            "series": [round(v, 3) for _d, v in corr_series[-90:]],
+            "pct": percentile(corr_series) if corr_series else None,
+            "note": ("正值＝股债同向、对冲失效；负值＝对冲有效。"
+                     "研报结论：只有增长冲击(+0.30)与深度衰退(+0.27)时债券才真能护盘。"),
+        },
+        "lei": {
+            "now": lei_series[-1][1] if lei_series else None,
+            "date": lei_series[-1][0] if lei_series else None,
+            "series": [round(v, 3) for _d, v in lei_series[-60:]],
+            "components": lei_used,
+        },
         "sources": sources,
         "extras": {k: v for k, v in ex.items() if not k.endswith("_series")},
+        "nfci_series": ex.get("nfci_series") or [],
         "series_slim": {k: [round(v, 4) for _d, v in s[-90:]] for k, s in series.items()
                         if len(s) > 5},
     }

@@ -1,6 +1,6 @@
 {
  "version": "1.0",
- "generated_at": "2026-11-24 22:39:13 (UTC+8)",
+ "generated_at": "2026-11-24 20:38:06 (UTC+8)",
  "as_of": "2026-11-23",
  "indicators": {
   "real10y": {
@@ -78,7 +78,7 @@
   "eps_rev": {
    "key": "eps_rev",
    "name": "盈利预期净上修比率",
-   "value": 0.5736,
+   "value": 0.5674,
    "unit": "",
    "chg1w": null,
    "chg1m": null,
@@ -113,19 +113,21 @@
   },
   "credit": {
    "key": "credit",
-   "name": "信用压力指数（代理）",
-   "value": 81.35,
-   "unit": "idx",
-   "chg1w": 47.62,
-   "chg1m": 36.50999999999999,
-   "chg3m": 80.47,
+   "name": "高收益债信用利差 HY OAS",
+   "value": 3.76,
+   "unit": "%",
+   "chg1w": 0.5299999999999998,
+   "chg1m": 0.48999999999999977,
+   "chg3m": 1.0599999999999996,
    "chg_label": "1月",
    "dir": "up",
-   "z": 2.20930257458484,
-   "pct": 94.42231075697211,
-   "src": "代理：HYG/IEF 相对强弱（非 bp，仅用于方向与分位）",
-   "note": "0＝一年最宽松，100＝一年最紧张；由 HYG 与 IEF 相对强弱反推",
-   "pct_label": "近 1 天分位"
+   "z": 3.7617819287929204,
+   "pct": 100.0,
+   "src": "ICE BofA 美国高收益债 OAS（FRED 官方）",
+   "note": "扩大＝风险偏好恶化，收窄＝风险偏好改善。绝对水平仍在历史中枢（约 450bp）下方，属偏紧区间；分位只反映近一年相对位置。",
+   "as_of": "2026-11-20",
+   "lag_days": 4,
+   "pct_label": "近一年分位"
   },
   "dxy": {
    "key": "dxy",
@@ -181,22 +183,112 @@
    "lag_days": 1,
    "pct_label": "近一年分位"
   },
+  "t10yie": {
+   "key": "t10yie",
+   "name": "10年通胀预期（T10YIE）",
+   "value": 2.13,
+   "unit": "%",
+   "chg1w": -0.07000000000000028,
+   "chg1m": -0.20999999999999996,
+   "chg3m": -0.18999999999999995,
+   "chg_label": "1月",
+   "dir": "down",
+   "z": -2.6066845667895238,
+   "pct": 0.4,
+   "src": "FRED 官方序列",
+   "note": "市场定价的通胀补偿，与盈亏平衡通胀互校",
+   "as_of": "2026-11-23",
+   "lag_days": 1,
+   "pct_label": "近一年分位"
+  },
+  "core_pce_yoy": {
+   "key": "core_pce_yoy",
+   "name": "核心PCE 同比",
+   "value": 3.121,
+   "unit": "%",
+   "chg1w": null,
+   "chg1m": 0.08000000000000007,
+   "chg3m": 0.3039999999999998,
+   "chg_label": "3月",
+   "dir": "up",
+   "z": null,
+   "pct": 92.3076923076923,
+   "src": "FRED 官方序列",
+   "note": "美联储最看重的通胀指标，月频；变化取最近 3 个月",
+   "as_of": "2026-09-01",
+   "lag_days": 84,
+   "pct_label": "近一年分位"
+  },
+  "unrate": {
+   "key": "unrate",
+   "name": "美国失业率",
+   "value": 4.1,
+   "unit": "%",
+   "chg1w": null,
+   "chg1m": 0.0,
+   "chg3m": -0.3000000000000007,
+   "chg_label": "3月",
+   "dir": "flat",
+   "z": null,
+   "pct": 25.0,
+   "src": "FRED 官方序列",
+   "note": "上升＝增长走弱（Sahm 规则关注 3 个月抬升幅度）",
+   "as_of": "2026-10-01",
+   "lag_days": 54,
+   "pct_label": "近一年分位"
+  },
+  "claims": {
+   "key": "claims",
+   "name": "初请失业金（4周均值）",
+   "value": 19.775,
+   "unit": "万",
+   "chg1w": null,
+   "chg1m": -0.65,
+   "chg3m": -0.5,
+   "chg_label": "13周",
+   "dir": "down",
+   "z": null,
+   "pct": 7.547169811320755,
+   "src": "FRED 官方序列",
+   "note": "周频高频就业指标，上行＝裁员压力增加",
+   "as_of": "2026-11-14",
+   "lag_days": 10,
+   "pct_label": "近一年分位"
+  },
+  "wti": {
+   "key": "wti",
+   "name": "WTI 原油现货",
+   "value": 89.53,
+   "unit": "$",
+   "chg1w": -0.09000000000000341,
+   "chg1m": -18.679999999999993,
+   "chg3m": 3.049999999999997,
+   "chg_label": "1月",
+   "dir": "down",
+   "z": 0.3369621040717563,
+   "pct": 52.77777777777778,
+   "src": "FRED 官方序列",
+   "note": "商品链条的价格锚；EIA 现货，数据日 2026-11-17（通常滞后数个交易日）",
+   "as_of": "2026-11-17",
+   "lag_days": 7,
+   "pct_label": "近一年分位"
+  },
   "sofr": {
    "key": "sofr",
    "name": "SOFR 隔夜融资利率",
    "value": 3.92,
    "unit": "%",
-   "chg1w": -0.010000000000000231,
-   "chg1m": 0.0,
+   "chg1w": 0.020000000000000018,
+   "chg1m": 0.040000000000000036,
    "chg3m": 0.27,
    "chg_label": "1月",
    "dir": "flat",
-   "z": 1.7071564622240816,
-   "pct": 92.36947791164658,
+   "z": 1.693825506051839,
+   "pct": 92.0,
    "src": "SOFR(NY Fed)",
    "note": "短端资金成本，银行与杠杆资金的压力表",
-   "as_of": "2026-11-23",
-   "lag_days": 1,
+   "as_of": "2026-11-20",
+   "lag_days": 4,
    "pct_label": "近一年分位"
   }
  },
@@ -215,13 +307,13 @@
   "earn_dir": "上行",
   "real_val": 2.79,
   "real_chg": 0.1299999999999999,
-  "eps_val": 0.5736
+  "eps_val": 0.5674
  },
  "score": {
-  "total": 32.2,
-  "band": "偏不利",
-  "color": "#f57c00",
-  "verdict": "逆风渐强，控制仓位与久期",
+  "total": 45.0,
+  "band": "中性",
+  "color": "#f2b705",
+  "verdict": "多空交织，靠结构不靠方向",
   "parts": {
    "real_rate": {
     "score": 16.124062236886957,
@@ -229,14 +321,14 @@
     "detail": "10Y TIPS 2.79%，近1月 +0.13pp"
    },
    "earnings": {
-    "score": 77.22,
+    "score": 76.3675,
     "label": "盈利预期（基本面）",
     "detail": "净上修比率 0.57（>0.5 上修占优）"
    },
    "credit": {
-    "score": 8.788844621513945,
-    "label": "信用（代理）",
-    "detail": "代理指数：值越高信用越紧"
+    "score": 48.95120000000001,
+    "label": "信用利差",
+    "detail": "HY OAS 3.76%（376bp），近1月 +0.49pp"
    },
    "dollar": {
     "score": 19.795415666102116,
@@ -247,6 +339,11 @@
     "score": 26.4585294117647,
     "label": "波动率与期限结构",
     "detail": "VIX 26.6｜期限结构 倒挂（1.04x）"
+   },
+   "growth": {
+    "score": 81.81818181818181,
+    "label": "增长动能（就业）",
+    "detail": "失业率3月+0.0pp｜初请13周-6千"
    }
   }
  },
@@ -305,7 +402,7 @@
    "meaning": "软着陆环境利于股票",
    "target": "SPY",
    "state": "near",
-   "read": "盈亏平衡通胀下行、增长走弱（2s10s +0.29pp）",
+   "read": "核心PCE同比上行、增长稳定（失业率3月+0.0pp｜初请13周-6千）",
    "indicators": [
     "core_pce_yoy",
     "unrate",
@@ -354,7 +451,7 @@
    "meaning": "相关商品上涨风险增加",
    "target": "XLE / DBC",
    "state": "off",
-   "read": "价格动量走弱；库存/产量需人工核对（EIA/OPEC 月报）",
+   "read": "价格动量走弱（WTI 近1月 -17.3%）；库存/产量需人工核对（EIA/OPEC 月报）",
    "indicators": [
     "commodity"
    ]
@@ -372,7 +469,7 @@
    "chg1m": -4.958090450938856,
    "chg3m": -5.393794124196116,
    "pct52": 21.59090909090909,
-   "fit": 34.7,
+   "fit": 44.5,
    "spark": [
     766.08,
     771.1,
@@ -450,7 +547,7 @@
    "chg1m": -7.576660988074957,
    "chg3m": -7.827896704043502,
    "pct52": 17.045454545454547,
-   "fit": 42.1,
+   "fit": 45.7,
    "spark": [
     711.37,
     721.11,
@@ -606,7 +703,7 @@
    "chg1m": -3.506907545164717,
    "chg3m": -7.602849251344679,
    "pct52": 28.977272727272727,
-   "fit": 34.6,
+   "fit": 49.8,
    "spark": [
     68.7,
     68.42,
@@ -684,7 +781,7 @@
    "chg1m": -0.4472271914132353,
    "chg3m": -4.414290621779459,
    "pct52": 57.38636363636363,
-   "fit": 32.4,
+   "fit": 46.5,
    "spark": [
     58.26,
     57.88,
@@ -762,7 +859,7 @@
    "chg1m": -13.644886773402565,
    "chg3m": -5.133893202345119,
    "pct52": 52.84090909090909,
-   "fit": 23.5,
+   "fit": 21.9,
    "spark": [
     62.43,
     62.29,
@@ -840,7 +937,7 @@
    "chg1m": -0.6878650227125305,
    "chg3m": -3.989962358845678,
    "pct52": 1.1363636363636365,
-   "fit": 14.1,
+   "fit": 42.2,
    "spark": [
     79.9,
     79.87,
@@ -1152,7 +1249,7 @@
    "chg1m": -14.633431085043991,
    "chg3m": -5.9146735617323865,
    "pct52": 30.681818181818183,
-   "fit": 16.7,
+   "fit": 15.1,
    "spark": [
     30.5,
     30.86,
@@ -1307,13 +1404,13 @@
    },
    {
     "name": "通胀",
-    "state": "下行",
-    "detail": "BE 2.13%"
+    "state": "上行",
+    "detail": "核心PCE 3.121%"
    },
    {
     "name": "增长",
     "state": "稳定",
-    "detail": "2s10s +0.29pp"
+    "detail": "失业率 4.1%"
    },
    {
     "name": "美元",
@@ -1340,7 +1437,7 @@
    {
     "name": "盈利预期",
     "state": "上修",
-    "detail": "净上修 0.5736"
+    "detail": "净上修 0.5674"
    },
    {
     "name": "风险偏好",
@@ -1350,7 +1447,7 @@
    {
     "name": "信用利差",
     "state": "扩大",
-    "detail": "81.35"
+    "detail": "3.76"
    }
   ]
  },
@@ -1382,20 +1479,20 @@
   "earnings": {
    "name": "分析师盈利预期(Nasdaq 一致预期)",
    "status": "ok",
-   "detail": "20/20 只权重股，4周上修 74 / 下修 55",
+   "detail": "20/20 只权重股，4周上修 80 / 下修 61",
    "last": "2026-11-24"
   },
   "nyfed": {
    "name": "SOFR(NY Fed)",
    "status": "ok",
-   "detail": "近 2 年共 497 个交易日",
-   "last": "2026-11-23"
+   "detail": "近 2 年共 496 个交易日",
+   "last": "2026-11-20"
   },
   "fred": {
    "name": "FRED 官方序列",
-   "status": "failed",
-   "detail": "全部失败: BAMLH0A0HYM2:HTTPError: HTTP Error 400: Bad Request; BAMLC0A0CM:HTTPError: HTTP Error 400: Bad Request; T10YIE:HTTPError: HTTP Error 400: Bad Request; DFII10:HTTPError: HTTP Error 400: Bad Request; DC",
-   "last": null
+   "status": "ok",
+   "detail": "9/9 条成功（HY OAS、通胀预期、初请、失业率、核心PCE、WTI）",
+   "last": "2026-11-23"
   },
   "calendar": {
    "name": "经济日历(Nasdaq)",
@@ -1407,15 +1504,17 @@
  "extras": {
   "curve_raw": 0.29000000000000004,
   "earn_dir": "up",
-  "credit_kind": "proxy",
+  "credit_kind": "real",
   "vix_ratio": 1.043921568627451,
   "vix_state": "倒挂",
+  "unrate_chg3": 0.0,
+  "claims_chg13": -6500.0,
   "spy_3m": -5.393794124196116,
   "qqq_3m": -7.827896704043502,
   "shy_3m": -0.518324288066363,
   "spy_vs_shy": -4.875469836129753,
-  "wti_1m": null,
-  "commodity_chg": -0.14139158929223278,
+  "wti_1m": -17.262729877090834,
+  "commodity_chg": -0.1518034924517913,
   "commodity_up": false,
   "commodity_tight": false,
   "curve_chg": -0.019999999999999574
@@ -1474,7 +1573,7 @@
    "date": "2026-11-25",
    "time": "16:30",
    "event": "API Weekly Crude Oil Stock",
-   "consensus": "0.900M",
+   "consensus": "",
    "previous": "5.300M"
   },
   {
@@ -1623,6 +1722,13 @@
    "event": "CFTC Crude Oil speculative net positions",
    "consensus": "",
    "previous": "63.1K"
+  }
+ ],
+ "history": [
+  {
+   "date": "2026-11-24",
+   "score": 45.0,
+   "quadrant": "Q2"
   }
  ]
 }
